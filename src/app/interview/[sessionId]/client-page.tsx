@@ -9,15 +9,16 @@ import { TranscriptView } from "@/components/interview/TranscriptView";
 import { CameraView } from "@/components/interview/CameraView";
 import { AudioRecorder } from "@/components/interview/AudioRecorder";
 import { Timer, Link2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import type { TranscriptLine } from "@/types";
 
 export function InterviewClientPage({ sessionId }: { sessionId: string }) {
   const [isClient, setIsClient] = useState(false);
   const [sessionLinked, setSessionLinked] = useState(false);
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [transcript, setTranscript] = useState<TranscriptLine[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -63,6 +64,21 @@ export function InterviewClientPage({ sessionId }: { sessionId: string }) {
     });
   };
 
+  const handleFacultyLink = (qrData: string) => {
+    // In a real app, you would validate the QR data and get faculty details
+    console.log("QR Scanned:", qrData);
+    setSessionLinked(true);
+    setTranscript([
+        {
+            id: 'sys-1',
+            who: 'SYS',
+            text: `Faculty session linked at ${new Date().toLocaleString()}. Faculty ID: ${qrData}`,
+            createdAt: Date.now(),
+            zwspGuarded: false,
+        }
+    ]);
+  }
+
   if (!isClient) {
     return null; // Or a loading spinner
   }
@@ -98,11 +114,7 @@ export function InterviewClientPage({ sessionId }: { sessionId: string }) {
                       Scan the QR code presented by your faculty member to begin.
                     </DialogDescription>
                   </DialogHeader>
-                  <CameraView onQrScan={(data) => {
-                      console.log("QR Scanned:", data)
-                      // In a real app, you would validate the QR data and link the session
-                      setSessionLinked(true);
-                  }} />
+                  <CameraView onQrScan={handleFacultyLink} />
                 </DialogContent>
               </Dialog>
             )}
@@ -121,7 +133,7 @@ export function InterviewClientPage({ sessionId }: { sessionId: string }) {
             <CardTitle>Live Transcript</CardTitle>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto">
-            <TranscriptView sessionId={sessionId} />
+            <TranscriptView initialTranscript={transcript} sessionId={sessionId} />
           </CardContent>
         </Card>
       </div>
