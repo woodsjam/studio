@@ -16,7 +16,7 @@ import type { TranscriptLine } from "@/types";
 export function InterviewClientPage({ sessionId }: { sessionId: string }) {
   const [isClient, setIsClient] = useState(false);
   const [sessionLinked, setSessionLinked] = useState(false);
-  const [interviewStarted, setInterviewStarted] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [transcript, setTranscript] = useState<TranscriptLine[]>([]);
   const { toast } = useToast();
@@ -29,7 +29,7 @@ export function InterviewClientPage({ sessionId }: { sessionId: string }) {
   // Timer logic
   useEffect(() => {
     let interval: NodeJS.Timeout | undefined;
-    if (interviewStarted) {
+    if (isRecording) {
       interval = setInterval(() => {
         setElapsedTime(prevTime => prevTime + 1);
       }, 1000);
@@ -43,7 +43,7 @@ export function InterviewClientPage({ sessionId }: { sessionId: string }) {
         clearInterval(interval);
       }
     };
-  }, [interviewStarted]);
+  }, [isRecording]);
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -60,18 +60,26 @@ export function InterviewClientPage({ sessionId }: { sessionId: string }) {
       });
       return;
     }
-    setInterviewStarted(true);
+    setIsRecording(true);
     setElapsedTime(0);
   };
   
   const handleFinalizeInterview = () => {
-    setInterviewStarted(false);
+    setIsRecording(false);
     // Add logic to submit the interview data
     toast({
       title: "Interview Finalized",
       description: "Your interview session has been successfully submitted.",
     });
   };
+
+  const handleToggleRecording = () => {
+    if (isRecording) {
+        handleFinalizeInterview();
+    } else {
+        handleStartInterview();
+    }
+  }
 
   const handleFacultyLink = (qrData: string) => {
     // In a real app, you would validate the QR data and get faculty details
@@ -96,19 +104,18 @@ export function InterviewClientPage({ sessionId }: { sessionId: string }) {
     <div className="container mx-auto py-6 h-full flex flex-col">
       <PageHeader 
         title="Live Interview Session"
-        description={interviewStarted ? "Your interview with the faculty is in progress." : "Prepare for your interview."}
+        description={isRecording ? "Your interview with the faculty is in progress." : "Prepare for your interview."}
         actions={
           <div className="flex items-center gap-4">
-             {interviewStarted && (
+             {isRecording && (
               <>
                 <div className="flex items-center gap-2 text-lg font-mono bg-muted px-3 py-1.5 rounded-md">
                   <Timer className="h-5 w-5" />
                   <span>{formatTime(elapsedTime)}</span>
                 </div>
-                <AudioRecorder />
               </>
             )}
-             {!interviewStarted && !sessionLinked && (
+             {!isRecording && !sessionLinked && (
                <Dialog>
                 <DialogTrigger asChild>
                    <Button variant="outline">
@@ -127,7 +134,7 @@ export function InterviewClientPage({ sessionId }: { sessionId: string }) {
                 </DialogContent>
               </Dialog>
             )}
-            {sessionLinked && !interviewStarted && (
+            {sessionLinked && (
                 <div className="text-green-600 font-semibold text-sm flex items-center gap-2">
                     <Link2 className="h-5 w-5" />
                     <span>Faculty Linked</span>
@@ -147,10 +154,11 @@ export function InterviewClientPage({ sessionId }: { sessionId: string }) {
         </Card>
       </div>
        <div className="mt-6 flex justify-center">
-        {!interviewStarted ? (
-          <Button onClick={handleStartInterview} size="lg" disabled={!sessionLinked}>Start Interview</Button>
-        ) : (
-          <Button onClick={handleFinalizeInterview} variant="destructive" size="lg">Finalize Interview</Button>
+        {sessionLinked && (
+            <AudioRecorder
+                isRecording={isRecording}
+                onToggleRecording={handleToggleRecording}
+            />
         )}
       </div>
     </div>
