@@ -142,7 +142,7 @@ export function InterviewClientPage({ sessionId }: { sessionId: string }) {
             <CardTitle>Live Transcript</CardTitle>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto">
-            <TranscriptView initialTranscript={transcript} sessionId={sessionId} />
+            <TranscriptView transcript={transcript} sessionId={sessionId} />
           </CardContent>
         </Card>
       </div>

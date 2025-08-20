@@ -5,16 +5,13 @@ import { useEffect, useState, useRef } from "react";
 import type { TranscriptLine } from "@/types";
 import { cn } from "@/lib/utils";
 
-export function TranscriptView({ sessionId, initialTranscript = [] }: { sessionId: string, initialTranscript?: TranscriptLine[] }) {
-  const [transcript, setTranscript] = useState<TranscriptLine[]>(initialTranscript);
+export function TranscriptView({ sessionId, transcript = [] }: { sessionId: string, transcript?: TranscriptLine[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // In a real app, this would be a real-time listener to Firestore
-    // sessions/{sessionId}/transcript, appending new lines to the state.
-    // For now, we just respect the initial transcript.
-    setTranscript(initialTranscript);
-  }, [initialTranscript]);
+    // For now, we just scroll when the transcript prop updates.
+  }, [transcript]);
 
   useEffect(() => {
     // Scroll to bottom when new messages are added
