@@ -1,41 +1,62 @@
 
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import { Button } from "@/components/ui/button";
 import { Mic, Square } from "lucide-react";
+import * as ID3 from 'node-id3';
 
 interface AudioRecorderProps {
   isRecording: boolean;
   onToggleRecording: () => void;
+  onAudioChunk: (blob: Blob) => void;
 }
 
-export function AudioRecorder({ isRecording, onToggleRecording }: AudioRecorderProps) {
+export interface AudioRecorderHandle {
+  stopRecording: () => void;
+}
+
+export const AudioRecorder = forwardRef<AudioRecorderHandle, AudioRecorderProps>(({ 
+  isRecording, 
+  onToggleRecording,
+  onAudioChunk 
+}, ref) => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
+
+  useImperativeHandle(ref, () => ({
+    stopRecording: () => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+        mediaRecorderRef.current.stop();
+      }
+    }
+  }));
 
   useEffect(() => {
     const handleStartRecording = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorderRef.current = new MediaRecorder(stream);
+        // Use a specific MIME type if available, otherwise let the browser decide.
+        // 'audio/webm;codecs=opus' is widely supported and good for this use case.
+        const options = { mimeType: 'audio/webm;codecs=opus' };
+        mediaRecorderRef.current = new MediaRecorder(stream, options);
+        
         mediaRecorderRef.current.ondataavailable = (event) => {
           if (event.data.size > 0) {
-            audioChunksRef.current.push(event.data);
+            onAudioChunk(event.data);
           }
         };
+
         mediaRecorderRef.current.onstop = () => {
-          // In a real app, you would upload audioChunksRef.current to Firebase Storage
-          console.log("Recording stopped. Chunks:", audioChunksRef.current);
-          audioChunksRef.current = [];
-          // Stop all media tracks
           stream.getTracks().forEach(track => track.stop());
         };
-        mediaRecorderRef.current.start();
+
+        // We send chunks every 3 seconds to simulate real-time transcription.
+        mediaRecorderRef.current.start(3000); 
+
       } catch (err) {
         console.error("Error accessing microphone:", err);
         alert("Could not access microphone. Please check your browser permissions.");
-        onToggleRecording(); // Toggle back if permission fails
+        if(isRecording) onToggleRecording(); // Toggle back if permission fails
       }
     };
 
@@ -51,13 +72,10 @@ export function AudioRecorder({ isRecording, onToggleRecording }: AudioRecorderP
       handleStopRecording();
     }
 
-    // Cleanup function to stop recording if component unmounts
     return () => {
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-        mediaRecorderRef.current.stop();
-      }
+      handleStopRecording();
     };
-  }, [isRecording, onToggleRecording]);
+  }, [isRecording, onToggleRecording, onAudioChunk]);
 
   return (
     <div className="flex items-center space-x-2 flex-col gap-4">
@@ -76,4 +94,6 @@ export function AudioRecorder({ isRecording, onToggleRecording }: AudioRecorderP
       </Button>
     </div>
   );
-}
+});
+
+AudioRecorder.displayName = "AudioRecorder";

@@ -1,17 +1,26 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TranscriptView } from "@/components/interview/TranscriptView";
 import { CameraView } from "@/components/interview/CameraView";
-import { AudioRecorder } from "@/components/interview/AudioRecorder";
+import { AudioRecorder, AudioRecorderHandle } from "@/components/interview/AudioRecorder";
 import { Timer, Link2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import type { TranscriptLine } from "@/types";
+import { transcribeAudio } from "@/ai/flows/transcribe-audio";
+
+
+const mockFacultyResponses = [
+    "Thank you. Can you tell me about a time you had to handle a difficult situation with a colleague?",
+    "Interesting. And what was the outcome of that situation?",
+    "That makes sense. How do you prioritize your work when you have multiple competing deadlines?",
+    "Okay, this has been very informative. Thank you for your time."
+];
 
 export function InterviewClientPage({ sessionId }: { sessionId: string }) {
   const [isClient, setIsClient] = useState(false);
@@ -20,6 +29,8 @@ export function InterviewClientPage({ sessionId }: { sessionId: string }) {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [transcript, setTranscript] = useState<TranscriptLine[]>([]);
   const { toast } = useToast();
+  const audioRecorderRef = useRef<AudioRecorderHandle>(null);
+  const facultyResponseIndexRef = useRef(0);
 
   useEffect(() => {
     setIsClient(true);
@@ -66,7 +77,7 @@ export function InterviewClientPage({ sessionId }: { sessionId: string }) {
   
   const handleFinalizeInterview = () => {
     setIsRecording(false);
-    // Add logic to submit the interview data
+    audioRecorderRef.current?.stopRecording();
     toast({
       title: "Interview Finalized",
       description: "Your interview session has been successfully submitted.",
@@ -95,6 +106,57 @@ export function InterviewClientPage({ sessionId }: { sessionId: string }) {
         }
     ]);
   }
+
+  const addMockFacultyResponse = () => {
+    const response = mockFacultyResponses[facultyResponseIndexRef.current];
+    if (response) {
+      const facultyLine: TranscriptLine = {
+        id: `fac-${Date.now()}`,
+        who: 'F',
+        text: response,
+        createdAt: Date.now(),
+        zwspGuarded: false,
+      };
+      setTranscript(prev => [...prev, facultyLine]);
+      facultyResponseIndexRef.current++;
+    }
+  };
+
+
+  const handleAudioChunk = async (audioBlob: Blob) => {
+    try {
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+            const base64data = reader.result as string;
+            const { text } = await transcribeAudio({ audioDataUri: base64data });
+
+            if(text) {
+                const studentLine: TranscriptLine = {
+                    id: `s-${Date.now()}`,
+                    who: 'S',
+                    text,
+                    createdAt: Date.now(),
+                    zwspGuarded: false,
+                };
+                setTranscript(prev => [...prev, studentLine]);
+                
+                // Add a mock faculty response after a short delay
+                setTimeout(() => {
+                    addMockFacultyResponse();
+                }, 1500);
+            }
+        };
+        reader.readAsDataURL(audioBlob);
+    } catch (error) {
+        console.error("Transcription error:", error);
+        toast({
+            variant: "destructive",
+            title: "Transcription Failed",
+            description: "Could not transcribe audio. Please try again.",
+        });
+    }
+};
+
 
   if (!isClient) {
     return null; // Or a loading spinner
@@ -156,8 +218,10 @@ export function InterviewClientPage({ sessionId }: { sessionId: string }) {
        <div className="mt-6 flex justify-center">
         {sessionLinked && (
             <AudioRecorder
+                ref={audioRecorderRef}
                 isRecording={isRecording}
                 onToggleRecording={handleToggleRecording}
+                onAudioChunk={handleAudioChunk}
             />
         )}
       </div>

@@ -3,3 +3,4 @@ config();
 
 import '@/ai/flows/summarize-interview.ts';
 import '@/ai/flows/detect-timing-anomalies.ts';
+import '@/ai/flows/transcribe-audio.ts';
