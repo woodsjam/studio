@@ -50,8 +50,8 @@ export const AudioRecorder = forwardRef<AudioRecorderHandle, AudioRecorderProps>
           stream.getTracks().forEach(track => track.stop());
         };
 
-        // We send chunks every 3 seconds to simulate real-time transcription.
-        mediaRecorderRef.current.start(3000); 
+        // We send chunks every 5 seconds to avoid rate limiting.
+        mediaRecorderRef.current.start(5000); 
 
       } catch (err) {
         console.error("Error accessing microphone:", err);
