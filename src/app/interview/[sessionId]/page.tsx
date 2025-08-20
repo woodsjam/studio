@@ -12,7 +12,6 @@ import { Timer } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function StudentInterviewWithFacultyPage({ params }: { params: { sessionId: string } }) {
-  const { sessionId } = params;
   const [sessionLinked, setSessionLinked] = useState(false);
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -87,7 +86,7 @@ export default function StudentInterviewWithFacultyPage({ params }: { params: { 
             <CardTitle>Live Transcript</CardTitle>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto">
-            <TranscriptView sessionId={sessionId} />
+            <TranscriptView sessionId={params.sessionId} />
           </CardContent>
         </Card>
       </div>
