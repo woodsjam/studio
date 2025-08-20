@@ -105,8 +105,10 @@ export default function InterviewsPage() {
                       </Button>
                     )}
                      {interview.status !== 'assigned' && (
-                       <Button asChild variant="outline" size="sm" disabled>
-                        <span className="cursor-not-allowed">View Details</span>
+                       <Button asChild variant="outline" size="sm">
+                        <Link href={`/interview/${interview.id}/report`} legacyBehavior={false}>
+                          View Details
+                        </Link>
                       </Button>
                     )}
                   </TableCell>
