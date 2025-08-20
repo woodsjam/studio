@@ -99,7 +99,7 @@ export default function InterviewsPage() {
                   <TableCell className="text-right">
                     {interview.status === 'assigned' && (
                       <Button asChild variant="ghost" size="sm">
-                        <Link href={`/app/interview/${interview.id}`}>
+                        <Link href={`/interview/${interview.id}`}>
                           Start Interview <ArrowRight className="ml-2 h-4 w-4" />
                         </Link>
                       </Button>
