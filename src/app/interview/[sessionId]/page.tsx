@@ -15,7 +15,6 @@ import { useToast } from "@/hooks/use-toast";
 
 
 export default function StudentInterviewWithFacultyPage({ params }: { params: { sessionId: string } }) {
-  const { sessionId } = params;
   const [isClient, setIsClient] = useState(false);
   const [sessionLinked, setSessionLinked] = useState(false);
   const [interviewStarted, setInterviewStarted] = useState(false);
@@ -123,7 +122,7 @@ export default function StudentInterviewWithFacultyPage({ params }: { params: { 
             <CardTitle>Live Transcript</CardTitle>
           </CardHeader>
           <CardContent className="flex-1 overflow-y-auto">
-            <TranscriptView sessionId={sessionId} />
+            <TranscriptView sessionId={params.sessionId} />
           </CardContent>
         </Card>
       </div>
