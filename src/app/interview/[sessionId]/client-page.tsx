@@ -28,13 +28,21 @@ export function InterviewClientPage({ sessionId }: { sessionId: string }) {
 
   // Timer logic
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: NodeJS.Timeout | undefined;
     if (interviewStarted) {
       interval = setInterval(() => {
         setElapsedTime(prevTime => prevTime + 1);
       }, 1000);
+    } else {
+       if (interval) {
+        clearInterval(interval);
+      }
     }
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
   }, [interviewStarted]);
 
   const formatTime = (seconds: number) => {
@@ -53,6 +61,7 @@ export function InterviewClientPage({ sessionId }: { sessionId: string }) {
       return;
     }
     setInterviewStarted(true);
+    setElapsedTime(0);
   };
   
   const handleFinalizeInterview = () => {
