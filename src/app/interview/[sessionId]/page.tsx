@@ -8,14 +8,24 @@ import { Button } from "@/components/ui/button";
 import { TranscriptView } from "@/components/interview/TranscriptView";
 import { CameraView } from "@/components/interview/CameraView";
 import { AudioRecorder } from "@/components/interview/AudioRecorder";
-import { Timer } from "lucide-react";
+import { Timer, Link2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+
 
 export default function StudentInterviewWithFacultyPage({ params }: { params: { sessionId: string } }) {
   const { sessionId } = params;
+  const [isClient, setIsClient] = useState(false);
   const [sessionLinked, setSessionLinked] = useState(false);
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
 
   // Timer logic
   useEffect(() => {
@@ -35,49 +45,75 @@ export default function StudentInterviewWithFacultyPage({ params }: { params: { 
   };
 
   const handleStartInterview = () => {
+    if (!sessionLinked) {
+      toast({
+        variant: "destructive",
+        title: "Faculty Not Linked",
+        description: "Please link to a faculty member before starting the interview.",
+      });
+      return;
+    }
     setInterviewStarted(true);
   };
   
   const handleFinalizeInterview = () => {
     setInterviewStarted(false);
     // Add logic to submit the interview data
-    alert("Interview Finalized!");
+    toast({
+      title: "Interview Finalized",
+      description: "Your interview session has been successfully submitted.",
+    });
   };
 
-  if (!sessionLinked) {
-    return (
-      <div className="container mx-auto py-6 h-full flex flex-col">
-        <PageHeader 
-          title="Link to Faculty"
-          description="Scan the QR code presented by your faculty member to begin."
-        />
-        <Card>
-          <CardContent className="pt-6">
-            <CameraView onQrScan={(data) => {
-                console.log("QR Scanned:", data)
-                // In a real app, you would validate the QR data and link the session
-                setSessionLinked(true);
-            }} />
-          </CardContent>
-        </Card>
-      </div>
-    );
+  if (!isClient) {
+    return null; // Or a loading spinner
   }
 
   return (
     <div className="container mx-auto py-6 h-full flex flex-col">
       <PageHeader 
         title="Live Interview Session"
-        description="Your interview with the faculty is in progress."
+        description={interviewStarted ? "Your interview with the faculty is in progress." : "Prepare for your interview."}
         actions={
           <div className="flex items-center gap-4">
              {interviewStarted && (
-              <div className="flex items-center gap-2 text-lg font-mono bg-muted px-3 py-1.5 rounded-md">
-                <Timer className="h-5 w-5" />
-                <span>{formatTime(elapsedTime)}</span>
-              </div>
+              <>
+                <div className="flex items-center gap-2 text-lg font-mono bg-muted px-3 py-1.5 rounded-md">
+                  <Timer className="h-5 w-5" />
+                  <span>{formatTime(elapsedTime)}</span>
+                </div>
+                <AudioRecorder />
+              </>
             )}
-            <AudioRecorder />
+             {!interviewStarted && !sessionLinked && (
+               <Dialog>
+                <DialogTrigger asChild>
+                   <Button variant="outline">
+                    <Link2 className="mr-2 h-4 w-4" />
+                    Link to Faculty
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[625px]">
+                  <DialogHeader>
+                    <DialogTitle>Link to Faculty Session</DialogTitle>
+                    <DialogDescription>
+                      Scan the QR code presented by your faculty member to begin.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <CameraView onQrScan={(data) => {
+                      console.log("QR Scanned:", data)
+                      // In a real app, you would validate the QR data and link the session
+                      setSessionLinked(true);
+                  }} />
+                </DialogContent>
+              </Dialog>
+            )}
+            {sessionLinked && !interviewStarted && (
+                <div className="text-green-600 font-semibold text-sm flex items-center gap-2">
+                    <Link2 className="h-5 w-5" />
+                    <span>Faculty Linked</span>
+                </div>
+            )}
           </div>
         }
       />
@@ -93,7 +129,7 @@ export default function StudentInterviewWithFacultyPage({ params }: { params: { 
       </div>
        <div className="mt-6 flex justify-center">
         {!interviewStarted ? (
-          <Button onClick={handleStartInterview} size="lg">Start Interview</Button>
+          <Button onClick={handleStartInterview} size="lg" disabled={!sessionLinked}>Start Interview</Button>
         ) : (
           <Button onClick={handleFinalizeInterview} variant="destructive" size="lg">Finalize Interview</Button>
         )}
