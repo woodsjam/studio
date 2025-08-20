@@ -1,3 +1,10 @@
+
+export enum UserType {
+  Student = 'student',
+  Faculty = 'faculty',
+  Proctor = 'proctor',
+}
+
 export interface User {
   uid: string;
   orgId: string;
@@ -5,6 +12,7 @@ export interface User {
   email: string;
   photoURL: string;
   role: 'student' | 'faculty' | 'proctor' | 'admin';
+  type?: UserType;
 }
 
 export interface Interview {
